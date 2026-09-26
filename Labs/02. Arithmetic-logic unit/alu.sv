@@ -24,10 +24,10 @@ module alu
 
     assign add_res   = a_i + b_i;
     assign sub_res   = a_i - b_i;
-    assign sll_res   = a_i << b_i;
+    assign sll_res   = a_i << b_i[4:0];
     assign xor_res   = a_i ^ b_i;
-    assign srl_res   = a_i >> b_i;
-    assign sra_res   = a_i >>> b_i;
+    assign srl_res   = a_i >> b_i[4:0];
+    assign sra_res   = $signed(a_i) >>> b_i[4:0];
     assign or_res    = a_i | b_i;
     assign and_res   = a_i & b_i;
     
@@ -52,7 +52,7 @@ module alu
             ALU_SLTU : result_o = sltu_res;
 
             default  : result_o = '0;
-        endcase : result_sel
+        endcase
     end
 
     always_comb begin : flag_sel
@@ -65,7 +65,7 @@ module alu
             ALU_GEU : flag_o = !sltu_res;
 
             default : flag_o = '0;
-        endcase : flag_sel
+        endcase
     end
 
 endmodule
