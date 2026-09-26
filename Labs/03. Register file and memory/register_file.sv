@@ -14,12 +14,6 @@ module register_file
 
     logic [31:0] rf_mem [31:0];
 
-    initial begin
-        for (int idx = 0; idx < 32; idx++) begin
-            rf_mem [idx] = '0;
-        end 
-    end
-
     always_ff @(posedge clk_i) begin : wr_ff
         if (write_enable_i) begin
             rf_mem [write_addr_i] <= write_data_i;            
@@ -27,8 +21,8 @@ module register_file
     end
 
     always_comb begin : rd_comb
-        read_data1_o = rf_mem [read_addr1_i];
-        read_data1_o = rf_mem [read_addr2_i];
+        read_data1_o = (read_addr1_i == '0) ? '0 : rf_mem [read_addr1_i];
+        read_data2_o = (read_addr2_i == '0) ? '0 : rf_mem [read_addr2_i];
     end
 
 endmodule : register_file
