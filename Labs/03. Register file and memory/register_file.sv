@@ -21,14 +21,14 @@ module register_file
     end
 
     always_ff @(posedge clk_i) begin : wr_ff
-        if (write_enable_i) begin
-            rf_mem [write_addr_i] <= write_data_i;            
+        if (write_enable_i && write_addr_i != '0) begin  // x0 is hard-wired to zero
+            rf_mem [write_addr_i] <= write_data_i;
         end
     end
 
     always_comb begin : rd_comb
         read_data1_o = rf_mem [read_addr1_i];
-        read_data1_o = rf_mem [read_addr2_i];
+        read_data2_o = rf_mem [read_addr2_i];
     end
 
 endmodule : register_file
