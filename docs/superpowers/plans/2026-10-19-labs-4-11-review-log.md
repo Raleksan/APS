@@ -16,3 +16,13 @@ Round 1 dispositions (host: Claude):
 
 ## Round 2 — Codex: APPROVED (same session; plan sha256 c154501f…; artifacts /tmp/claude-1000/-home-raleksan-work-miet-cad-edu-work-APS/d48684c0-3185-4da2-b4fc-403f3ec46f8b/scratchpad/claudex/review2/claudex-7nudbb2p/result.json)
 - No findings. Limitations: static review only.
+
+## Build (host: Claude), base dfffcd5 → 7948c0d
+- Tasks 0–8 implemented by Claude, one commit each; all run.sh scripts pass (labs 3,5,6,8,10 compare-tbs PASS; labs 4,7,9,11 waveforms checked manually, results in commit messages).
+- Deviation: Verilator's make cannot build under paths with spaces, so each run.sh compiles in a mktemp dir and keeps sources/waveform in ./build.
+
+## Inspection 1 — fresh Codex session 01a15433-8892-78c1-a6ba-a9e84f5da762: REVISE
+Run on a local clone of the branch (sshfs checkout made the runner's 30 s git diff time out); same commits, base dfffcd5.
+- R1 (high) lab 11 csr write_enable not gated by trap — REJECTED (no code change). Made-up modules/lab_11.riscv_core.sv (the course reference core) wires decoder csr_we straight to csr_controller.write_enable_i, as does README fig. 1. Changing it would make the reference answer deviate from the course design (spec anti-goal). Reported to the user as a course-design limitation.
+- R2 (high) store interrupted in its second cycle is replayed after mret — REJECTED (no code change). Reproduced with an IRQ injected in the store's second cycle: our core and the Made-up reference core give identical core-boundary traces (wavepeek output_diff EQUAL, 95 rows); both write on the first edge and replay. Same reasoning as R1; reported to the user.
+- No code changed after inspection, so no reinspection round was needed.
