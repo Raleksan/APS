@@ -20,6 +20,8 @@
 - Simulator command (verified in this session on the lab 10 irq tb): `verilator --binary --timing --trace-fst -Wno-fatal -Wno-lint -Wno-style -Wno-MULTITOP -j 0 --Mdir build -o sim <files…> build/dump.sv`, with **no** `--top-module`. `run.sh` first writes `build/dump.sv` = `module dump; initial begin $dumpfile("wave.fst"); $dumpvars; end endmodule`; Verilator treats it as a second top and dumps the whole design. Run `./sim` with `build/` as cwd; the waveform is `build/wave.fst`. Testbench files are never edited to add dumping.
 - The simulation binary runs with `build/` as cwd; `run.sh` copies the needed `program.mem` into `build/` first (`$readmemh("program.mem")` is cwd-relative).
 
+- Individual-assignment programs (lab 4 and lab 7 step 6) are out of scope.
+
 ## Review Focus
 
 1. Outputs that are X/don't-care in the reference (e.g. decoder outputs on illegal instructions, `read_data_o` when `mem_req_i=0`): a compare-tb that uses `!==` blindly will fail on legitimate don't-cares — mask only what the README says is unspecified, and cite the README line in a comment.
@@ -32,10 +34,21 @@ Each line above is pinned by a directed case in the owning task's compare-tb (Ta
 
 ---
 
-### Task 0: Ignore build dirs
+### Task 0: Ignore build dirs; repair the lab 3 register file
 
-- [ ] **Step 1:** Create `.gitignore` at repo root with the line `Labs/*/build/`.
-- [ ] **Step 2:** Commit `Lab infra: ignore build dirs`.
+Codex review R1: `Labs/03. Register file and memory/register_file.sv` assigns `read_data1_o` twice (line 31, `read_data2_o` undriven) and allows writes to x0 (line 25). Labs 4, 7, 9, 11 depend on it. The official lab 3 tb fails even against the Made-up reference under Verilator, so verify with a compare-tb.
+
+**Files:**
+- Create: `.gitignore` (line `Labs/*/build/`)
+- Modify: `Labs/03. Register file and memory/register_file.sv:23-32`
+- Create: `Labs/03. Register file and memory/tb_register_file_vs_ref.sv`, `Labs/03. Register file and memory/run.sh`
+
+- [ ] **Step 1:** Write `.gitignore`.
+- [ ] **Step 2:** Compare-tb (Task 2 shape, clocked): our `register_file` vs `register_file_ref` (renamed copy of `../Made-up modules/lab_03.register_file.sv`). Directed: write then read every register on both ports with distinct `read_addr1_i != read_addr2_i`, write to x0 then read x0 on both ports (expect 0), `write_enable_i=0` writes; then 10 000 random cycles. Compare both read outputs every cycle.
+- [ ] **Step 3:** Ref-vs-ref sanity → `PASS`; current code → `FAIL` (proves the tb catches R1).
+- [ ] **Step 4:** Fix: line 31 → `read_data2_o = rf_mem[read_addr2_i];`; writes only when `write_enable_i && write_addr_i != 0` (keep the zero-init `initial` block so x0 reads 0).
+- [ ] **Step 5:** `./run.sh` → `PASS`.
+- [ ] **Step 6:** Commit `.gitignore` and the lab 3 files as `Lab 3: fix register file read port 2 and x0 writes`.
 
 ### Task 1: Lab 4 — CYBERcobra
 
@@ -63,7 +76,7 @@ Each line above is pinned by a directed case in the owning task's compare-tb (Ta
 - Consumes: lab 5 folder packages `alu_opcodes_pkg.sv csr_pkg.sv decoder_pkg.sv` (that order).
 - Produces: `module decoder` with the 16 ports exactly as in README (`fetched_instr_i` … `mret_o`), `import decoder_pkg::*;`.
 
-- [ ] **Step 1:** Write `tb_decoder_vs_ref.sv` (top `tb_decoder_vs_ref`): instantiates `decoder dut(...)` and `decoder_ref gold(...)` (`ref` is a reserved word), drives `fetched_instr_i`; after each drive waits `#1` and compares every output with `!==` (masked per Review Focus 1). Stimulus: one directed instruction per RV32I/Zicsr/`mret`/`ecall`/`ebreak`/`fence` encoding the README tables list, every opcode with low bits `!= 2'b11`, every unused opcode, random funct3/funct7 per opcode, then 100 000 random words. Ends with `$display("PASS")` or `$fatal(1, "FAIL: %0d mismatches")`; prints the first 10 mismatches with instr and signal name.
+- [ ] **Step 1:** Write `tb_decoder_vs_ref.sv` (top `tb_decoder_vs_ref`): instantiates `decoder dut(...)` and `decoder_ref gold(...)` (`ref` is a reserved word), drives `fetched_instr_i`; after each drive waits `#1` and compares `illegal_instr_o` always and every other output with `!==` under exactly the official masks in `lab_05.tb_decoder.sv:441-456` (e.g. `a_sel/b_sel/alu_op` only when opcode ∉ {MISC_MEM, SYSTEM}; `csr_op` only on SYSTEM with func3≠0; `mem_size` only on LOAD/STORE; `wb_sel` per line 451). Stimulus: one directed instruction per RV32I/Zicsr/`mret`/`ecall`/`ebreak`/`fence` encoding the README tables list, every opcode with low bits `!= 2'b11`, every unused opcode, random funct3/funct7 per opcode, then 100 000 random words. Ends with `$display("PASS")` or `$fatal(1, "FAIL: %0d mismatches")`; prints the first 10 mismatches with instr and signal name.
 - [ ] **Step 2:** Write `run.sh`: `sed -E '0,/^module decoder\b/s//module decoder_ref/' "../Made-up modules/lab_05.decoder.sv" > build/decoder_ref.sv`, compile packages + `decoder.sv` + `build/decoder_ref.sv` + tb, run.
 - [ ] **Step 3:** Sanity-check the tb itself: temporarily point the DUT file list at a second renamed copy of the reference (`decoder` from Made-up) → expected `PASS`. Then restore.
 - [ ] **Step 4:** Implement `decoder.sv` per README (all tables, illegal-instruction rules, `csr_op`, `mem_size`).
@@ -107,7 +120,7 @@ Each line above is pinned by a directed case in the owning task's compare-tb (Ta
 - Create: `Labs/08. Load-store unit/lsu.sv`, `tb_lsu_vs_ref.sv`, `run.sh`
 
 **Interfaces:**
-- Consumes: packages `../05. Main decoder/alu_opcodes_pkg.sv`, `../05. Main decoder/decoder_pkg.sv` (Made-up lsu imports `decoder_pkg`, which imports `alu_opcodes_pkg`).
+- Consumes: packages `../05. Main decoder/alu_opcodes_pkg.sv`, `../05. Main decoder/csr_pkg.sv`, `../05. Main decoder/decoder_pkg.sv`, in that order (Made-up lsu imports `decoder_pkg`, which imports `alu_opcodes_pkg` and `csr_pkg` — Codex review R2).
 - Produces: `module lsu` with the 18 README ports.
 
 - [ ] **Step 1:** Compare-tb: drives core side and a behavioural memory model answering `mem_rd_i`/`mem_ready_i` (both always-ready and random-latency ready). Compare all `core_*_o` and `mem_*_o` outputs every cycle. Directed: every `core_size_i` (B, H, W, BU, HU) × every byte offset 0–3, loads and stores, back-to-back requests, reset mid-request (Review Focus 3/4).
