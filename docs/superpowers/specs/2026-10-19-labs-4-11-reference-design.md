@@ -8,7 +8,7 @@ Labs 2–3 are already solved in place (e.g. `Labs/02. Arithmetic-logic unit/alu
 ## Goals
 
 - One synthesizable SystemVerilog solution per lab, written exactly to the interface, names and behaviour its `README.md` specifies.
-- Each lab passes its provided testbench (`lab_NN.tb_*.sv`) in simulation.
+- Each lab is verified in simulation on this machine (see Verification).
 - A small `run.sh` in each lab folder (4–11) that simulates that lab's testbench and dumps an FST waveform.
 
 ## Non-goals
@@ -20,14 +20,20 @@ Labs 2–3 are already solved in place (e.g. `Labs/02. Arithmetic-logic unit/alu
 
 ## Anti-goals
 
-- Using `Made-up modules/*` (obfuscated netlists) inside the solutions — every dependency comes from our own solved labs.
+- Using `Made-up modules/*` (obfuscated netlists) inside the solutions — every dependency comes from our own solved labs. One exception (user's decision): lab 4 uses `Made-up modules/lab_01.fulladder32.sv` for its 32-bit adder, since lab 1 is out of scope.
 - Behaviour that passes the testbench but deviates from the README (students compare against this).
 
 ## Constraints
 
 - Branch: `labs-4-11-reference` (from `master_aps`). Git needs `-c safe.directory=<repo>` (dubious-ownership error); do not change global git config.
-- Tools available: Verilator and iverilog (`~/oss-cad-suite`), `wavepeek`, `codex`. No Vivado.
+- Tools available: Verilator 5.037 (`~/oss-cad-suite`), `wavepeek`, `codex`. No Vivado (ARM/Asahi host, Vivado cannot run).
+- The provided self-checking testbenches (labs 5, 6, 8, 10) do not run correctly here: iverilog cannot parse them; Verilator crashes on lab 6, rejects `|-> ##1` in lab 10 csr, and even the Made-up reference modules fail the lab 5 and lab 10 irq testbenches under Verilator.
 - Some testbenches are not self-checking (labs 4, 7, 9, 11: README says verify clock by clock against the program listing; lab 11 uses listing 1 of lab 10). For those, check the waveform manually, clock by clock against the listing (using `wavepeek` to read it), and record the result in that lab's commit message (my call). Lab 11 must get this manual check — a clean run is not a pass.
+
+## Verification (user's decision)
+
+- Labs 5, 6, 8, 10: a new testbench per module (e.g. `Labs/05. Main decoder/tb_decoder_vs_ref.sv`) drives our module and the Made-up reference with identical stimulus and compares every output every cycle; it prints a pass/fail summary and exits non-zero on mismatch. The Made-up module is compiled from a renamed copy (`<name>` → `<name>_ref`) in the build dir, so the originals stay untouched. Stimulus: directed cases for every opcode/size/CSR the README lists, plus random cycles. The provided `lab_NN.tb_*.sv` files are not used for these labs.
+- Labs 4, 7, 9, 11: run the provided testbench (it has no checks to break) for the waveform, then check it manually, clock by clock.
 
 ## Decided
 
