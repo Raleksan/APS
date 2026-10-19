@@ -9,5 +9,5 @@ trap 'rm -rf "$obj"' EXIT
 sed -E '0,/^module register_file\b/s//module register_file_ref/' "../Made-up modules/lab_03.register_file.sv" > build/register_file_ref.sv
 echo 'module dump; initial begin $dumpfile("wave.fst"); $dumpvars; end endmodule' > build/dump.sv
 verilator --binary --timing --trace-fst -Wno-fatal -Wno-lint -Wno-style -Wno-MULTITOP -j 0 --Mdir "$obj" -o sim \
-  register_file.sv build/register_file_ref.sv tb_register_file_vs_ref.sv build/dump.sv > build/verilator.log
+  register_file.sv build/register_file_ref.sv tb_register_file_vs_ref.sv build/dump.sv > build/verilator.log 2>&1 || { cat build/verilator.log; exit 1; }
 (cd build && "$obj/sim")

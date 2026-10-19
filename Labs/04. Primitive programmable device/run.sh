@@ -13,5 +13,5 @@ lab3="../03. Register file and memory"
 verilator --binary --timing --trace-fst -Wno-fatal -Wno-lint -Wno-style -Wno-MULTITOP -j 0 --Mdir "$obj" -o sim \
   "$lab2/alu_opcodes_pkg.sv" "$lab3/memory_pkg.sv" \
   "$lab2/alu.sv" "$lab3/instr_mem.sv" "$lab3/register_file.sv" "../Made-up modules/lab_01.fulladder32.sv" \
-  cybercobra.sv lab_04.tb_cybercobra.sv build/dump.sv > build/verilator.log
+  cybercobra.sv lab_04.tb_cybercobra.sv build/dump.sv > build/verilator.log 2>&1 || { cat build/verilator.log; exit 1; }
 (cd build && "$obj/sim")

@@ -12,5 +12,5 @@ verilator --binary --timing --trace-fst --assert -Wno-fatal -Wno-lint -Wno-style
   alu_opcodes_pkg.sv csr_pkg.sv decoder_pkg.sv memory_pkg.sv \
   "../02. Arithmetic-logic unit/alu.sv" "../03. Register file and memory/register_file.sv" \
   "../03. Register file and memory/instr_mem.sv" "../05. Main decoder/decoder.sv" "../06. Main memory/data_mem.sv" \
-  processor_core.sv processor_system.sv lab_07.tb_processor_system.sv build/dump.sv > build/verilator.log
+  processor_core.sv processor_system.sv lab_07.tb_processor_system.sv build/dump.sv > build/verilator.log 2>&1 || { cat build/verilator.log; exit 1; }
 (cd build && "$obj/sim")
